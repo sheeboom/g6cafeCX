@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G6 Cafe - Menu</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <h1>G6 Cafe</h1>
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="menu.html">Menu</a>
+            <a href="#">Promotion</a>
+            <a href="cart.html"><img src="cart.png" height="50px" alt="cart"></a>
+        </nav>
+    </header>
+
+    <!-- Menu Section -->
+    <section class="menu">
+        <h2>Our Menu</h2>
+        <div id="menu-items" class="menu-items">
+            <!-- Menu items will load here dynamically -->
+        </div>
+        <div id="error-message" class="error-message"></div>
+    </section>
+
+    <!-- Cart Section -->
+    <section class="cart">
+        <h3>Your Items</h3>
+        <ul id="cart-items">
+            <li>No items added yet.</li>
+        </ul>
+        <div class="btn-container">
+            <button class="order-btn">Order Now</button>
+        </div>
+    </section>
+
+    <script>
+        fetch('http://127.0.0.1:5000/menu')  // Correct URL
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Server returned ${response.status} - ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log(data);  // Make sure you see the response in the console
+    })
+    .catch(error => {
+        console.error('Error fetching menu:', error.message);
+    });
+
+    </script>
+</body>
+</html>
