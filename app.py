@@ -1,47 +1,67 @@
-from flask import Flask, jsonify
+from flask import Flask, render_template, jsonify, request
+from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-import mysql.connector
-from mysql.connector import Error
-import logging
 
 app = Flask(__name__)
 CORS(app)
 
-# Database configuration
-db_config = {
-    'host': 'localhost',         # Database host
-    'user': 'admin',             # Your MySQL username
-    'password': 'MySql.Admin',   # Your MySQL password
-    'database': 'g6cafe'         # Your database name
-}
+# Configure MySQL connection
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:Jheyan061709@localhost/g6Cafe'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
-# Enable logging
-logging.basicConfig(level=logging.DEBUG)
+class MenuDetails(db.Model):
+    __tablename__ = 'menu_details'
+    item_id = db.Column(db.Integer, primary_key=True)
+    category_name = db.Column(db.String(100), nullable=False)
+    item_name = db.Column(db.String(100), nullable=False)
+    photo = db.Column(db.String(255))
+    unit_price = db.Column(db.Numeric(10, 2), nullable=False)
 
-# Root route
+class Order(db.Model):
+    __tablename__ = 'orders'
+    order_id = db.Column(db.Integer, primary_key=True)
+    date_time = db.Column(db.DateTime, default=db.func.current_timestamp())
+    subtotal = db.Column(db.Numeric(10, 2), nullable=False)
+    vat_amount = db.Column(db.Numeric(10, 2), nullable=False)
+    discount_amount = db.Column(db.Numeric(10, 2))
+    net_amount = db.Column(db.Numeric(10, 2), nullable=False)
+    tender_amount = db.Column(db.Numeric(10, 2), nullable=False)
+    change_amount = db.Column(db.Numeric(10, 2), nullable=False)
+    receipt_number = db.Column(db.String(50), nullable=False, unique=True)
+
+class OrderDetails(db.Model):
+    __tablename__ = 'order_details'
+    order_item_id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('orders.order_id', ondelete='CASCADE'), nullable=False)
+    item_id = db.Column(db.Integer, db.ForeignKey('menu_details.item_id', ondelete='CASCADE'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    subtotal = db.Column(db.Numeric(10, 2), nullable=False)
+    order_preference = db.Column(db.Text)
+
 @app.route('/')
 def home():
-    return "Welcome to G6 Cafe API!"  # This will show up when you access http://127.0.0.1:5000/
+    return render_template('index.html')
 
-# Menu route
-@app.route('/menu', methods=['GET'])
+@app.route('/menu')
 def menu():
-    global connection,cursor
-    try:
-        connection = mysql.connector.connect(**db_config)
-        if connection.is_connected():
-            cursor = connection.cursor(dictionary=True)
-            query = "SELECT item_id, item_name, category_name, photo, unit_price FROM menu_details"
-            cursor.execute(query)
-            menu = cursor.fetchall()
-            return jsonify(menu)
-    except Error as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if 'cursor' in locals():
-            cursor.close()
-        if 'connection' in locals() and connection.is_connected():
-            connection.close()
+    return render_template('menu.html')
+
+@app.route('/cart')
+def cart():
+    return render_template('cart.html')
+
+@app.route('/api/menu', methods=['GET'])
+def get_menu():
+    menu_items = MenuDetails.query.all()
+    menu_list = [{
+        'item_id': item.item_id,
+        'item_name': item.item_name,
+        'category_name': item.category_name,
+        'unit_price': str(item.unit_price),
+        'photo': item.photo
+    } for item in menu_items]
+    return jsonify(menu_list)
 
 if __name__ == '__main__':
-    app.run(debug=True, host='127.0.0.1', port=5000)
+    app.run(debug=True)
