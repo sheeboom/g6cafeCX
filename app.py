@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 
@@ -53,13 +53,18 @@ def cart():
 
 @app.route('/api/menu', methods=['GET'])
 def get_menu():
-    menu_items = MenuDetails.query.all()
+    category = request.args.get('category')
+    if category:
+        menu_items = MenuDetails.query.filter_by(category_name=category).all()
+    else:
+        menu_items = MenuDetails.query.all()
+
     menu_list = [{
         'item_id': item.item_id,
         'item_name': item.item_name,
         'category_name': item.category_name,
         'unit_price': str(item.unit_price),
-        'photo': item.photo
+        'photo': url_for('static', filename=f'images/{item.photo}') if item.photo else None
     } for item in menu_items]
     return jsonify(menu_list)
 
